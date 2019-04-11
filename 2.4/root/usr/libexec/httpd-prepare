@@ -33,9 +33,6 @@ if [ -z ${TLS_CERT_PATH+x} ]
 then
   TLS_CERT_PATH=/etc/pki/httpd/tls.crt
 fi
-echo "TLS KEY PATH: ${TLS_KEY_PATH}"
-echo "TLS CERT PATH: ${TLS_CERT_PATH}"
-cat /etc/httpd/conf.d/ssl.conf
 
 sed -i "s#SSLCertificateFile.*#SSLCertificateFile ${TLS_CERT_PATH}#g" /etc/httpd/conf.d/ssl.conf
 sed -i "s#SSLCertificateKeyFile.*#SSLCertificateKeyFile ${TLS_KEY_PATH}#g" /etc/httpd/conf.d/ssl.conf

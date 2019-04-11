@@ -4,6 +4,8 @@ set -eu
 
 source ${HTTPD_CONTAINER_SCRIPTS_PATH}/common.sh
 
+sed -i "s#PROXY_PASS_LINE1#${PROXY_PASS_LINE1}#g" /etc/httpd/conf.d/reverseproxy.conf
+
 # Check whether we run as s2i
 if ! [ -v HTTPD_RUN_BY_S2I ] && runs_privileged ; then
   config_privileged
