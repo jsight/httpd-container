@@ -24,20 +24,27 @@ if head "/etc/redhat-release" | grep -q "^Red Hat Enterprise Linux release 8"; t
     /usr/libexec/httpd-ssl-gencerts
 fi
 
+if [ -z ${TLS_KEY_PATH+x} ]
+then
+  TLS_KEY_PATH=/etc/pki/httpd/tls.key
+fi
+
+if [ -z ${TLS_CERT_PATH+x} ]
+then
+  TLS_CERT_PATH=/etc/pki/httpd/tls.crt
+fi
+echo "TLS KEY PATH: ${TLS_KEY_PATH}"
+echo "TLS CERT PATH: ${TLS_CERT_PATH}"
+cat /etc/httpd/conf.d/ssl.conf
+
+sed -i "s#SSLCertificateFile.*#SSLCertificateFile ${TLS_CERT_PATH}#g" /etc/httpd/conf.d/ssl.conf
+sed -i "s#SSLCertificateKeyFile.*#SSLCertificateKeyFile ${TLS_KEY_PATH}#g" /etc/httpd/conf.d/ssl.conf
+
 mkdir -p ${HTTPD_CONFIGURATION_PATH}
 chmod -R a+rwx ${HTTPD_MAIN_CONF_PATH}
 chmod -R a+rwx ${HTTPD_MAIN_CONF_D_PATH}
 chmod -R a+rwx ${HTTPD_MAIN_CONF_MODULES_D_PATH}
 
-# Generate self-signed cert
-openssl genrsa -out /etc/pki/tls/private/ca.key 2048
-openssl req -new -x509 -days 365 -key /etc/pki/tls/private/ca.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=Acme Root CA" -out /etc/pki/tls/certs/ca.crt
-
-openssl req -newkey rsa:2048 -nodes -keyout /etc/pki/tls/private/localhost.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=localhost" -out /etc/pki/tls/certs/server.csr
-openssl x509 -req -extfile <(printf "subjectAltName=DNS:localhost,DNS:localhost") -days 365 -in /etc/pki/tls/certs/server.csr -CA /etc/pki/tls/certs/ca.crt -CAkey /etc/pki/tls/private/ca.key -CAcreateserial -out /etc/pki/tls/certs/localhost.crt
-
-chmod -R a+r   /etc/pki/tls/certs/localhost.crt
-chmod -R a+r   /etc/pki/tls/private/localhost.key
 mkdir -p ${HTTPD_APP_ROOT}/etc
 chmod -R a+rwx ${HTTPD_APP_ROOT}/etc
 chmod -R a+rwx ${HTTPD_VAR_RUN}
