@@ -6,6 +6,44 @@ source ${HTTPD_CONTAINER_SCRIPTS_PATH}/common.sh
 
 sed -i "s#PROXY_PASS_LINE1#${PROXY_PASS_LINE1}#g" /etc/httpd/conf.d/reverseproxy.conf
 
+if [ -z ${TLS_KEY_PATH+x} ]
+then
+  TLS_KEY_PATH=/etc/pki/httpd/tls.key
+fi
+
+if [ -z ${TLS_CERT_PATH+x} ]
+then
+  TLS_CERT_PATH=/etc/pki/httpd/tls.crt
+fi
+
+if [ -z ${SSL_CA_PATH+x} ]
+then
+  SSL_CA_PATH=/etc/pki/rhitcerts/trust-chain.crt
+fi
+
+sed -i "s#SSLCertificateFile.*#SSLCertificateFile ${TLS_CERT_PATH}#g" /etc/httpd/conf.d/ssl.conf
+sed -i "s#SSLCertificateKeyFile.*#SSLCertificateKeyFile ${TLS_KEY_PATH}#g" /etc/httpd/conf.d/ssl.conf
+
+if [ -v SSL_CLIENT_CERT_REQUIRED ];
+then
+  sed -i "/<\/VirtualHost>/i SSLOptions +ExportCertData +StdEnvVars" /etc/httpd/conf.d/ssl.conf
+  sed -i "/<\/VirtualHost>/i SSLCACertificateFile ${SSL_CA_PATH}" /etc/httpd/conf.d/ssl.conf
+  sed -i "/<\/VirtualHost>/i SSLVerifyClient require" /etc/httpd/conf.d/ssl.conf
+  sed -i "/<\/VirtualHost>/i SSLVerifyDepth  10" /etc/httpd/conf.d/ssl.conf
+  
+  sed -i "/<\/VirtualHost>/i RequestHeader set SSL_CLIENT_S_DN    \"\"" /etc/httpd/conf.d/ssl.conf
+  sed -i "/<\/VirtualHost>/i RequestHeader set SSL_CLIENT_I_DN    \"\"" /etc/httpd/conf.d/ssl.conf
+  sed -i "/<\/VirtualHost>/i RequestHeader set SSL_SERVER_S_DN_OU \"\"" /etc/httpd/conf.d/ssl.conf
+  sed -i "/<\/VirtualHost>/i RequestHeader set SSL_CLIENT_VERIFY  \"\"" /etc/httpd/conf.d/ssl.conf
+  sed -i "/<\/VirtualHost>/i RequestHeader set SSL_CLIENT_CERT \"\"" /etc/httpd/conf.d/ssl.conf
+  
+  sed -i "/<\/Location>/i RequestHeader set SSL_CLIENT_S_DN    \"%{SSL_CLIENT_S_DN}s\"" /etc/httpd/conf.d/reverseproxy.conf
+  sed -i "/<\/Location>/i RequestHeader set SSL_CLIENT_I_DN    \"%{SSL_CLIENT_I_DN}s\"" /etc/httpd/conf.d/reverseproxy.conf
+  sed -i "/<\/Location>/i RequestHeader set SSL_SERVER_S_DN_OU \"%{SSL_SERVER_S_DN_OU}s\"" /etc/httpd/conf.d/reverseproxy.conf
+  sed -i "/<\/Location>/i RequestHeader set SSL_CLIENT_VERIFY  \"%{SSL_CLIENT_VERIFY}s\"" /etc/httpd/conf.d/reverseproxy.conf
+  sed -i "/<\/Location>/i RequestHeader set SSL_CLIENT_CERT \"%{SSL_CLIENT_CERT}s\"" /etc/httpd/conf.d/reverseproxy.conf
+fi
+
 # Check whether we run as s2i
 if ! [ -v HTTPD_RUN_BY_S2I ] && runs_privileged ; then
   config_privileged

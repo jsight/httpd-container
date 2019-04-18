@@ -24,19 +24,6 @@ if head "/etc/redhat-release" | grep -q "^Red Hat Enterprise Linux release 8"; t
     /usr/libexec/httpd-ssl-gencerts
 fi
 
-if [ -z ${TLS_KEY_PATH+x} ]
-then
-  TLS_KEY_PATH=/etc/pki/httpd/tls.key
-fi
-
-if [ -z ${TLS_CERT_PATH+x} ]
-then
-  TLS_CERT_PATH=/etc/pki/httpd/tls.crt
-fi
-
-sed -i "s#SSLCertificateFile.*#SSLCertificateFile ${TLS_CERT_PATH}#g" /etc/httpd/conf.d/ssl.conf
-sed -i "s#SSLCertificateKeyFile.*#SSLCertificateKeyFile ${TLS_KEY_PATH}#g" /etc/httpd/conf.d/ssl.conf
-
 mkdir -p ${HTTPD_CONFIGURATION_PATH}
 chmod -R a+rwx ${HTTPD_MAIN_CONF_PATH}
 chmod -R a+rwx ${HTTPD_MAIN_CONF_D_PATH}
